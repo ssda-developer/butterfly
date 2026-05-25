@@ -50,11 +50,11 @@
     </button>
   </div>
 
-  <div id="loveToast" class="absolute top-20 left-1/2 -translate-x-1/2 max-w-md bg-gradient-to-r from-pink-950/80 to-purple-950/80 backdrop-blur-lg border border-pink-500/30 rounded-2xl p-4 text-center shadow-[0_0_25px_rgba(244,143,177,0.25)] pointer-events-none opacity-0 z-30 transition-all duration-300">
+  <div id="loveToast" class="absolute top-12 left-1/2 -translate-x-1/2 w-max max-w-[90vw] bg-gradient-to-r from-pink-950/85 to-purple-950/85 backdrop-blur-lg border border-pink-500/30 rounded-2xl py-3 px-6 text-center shadow-[0_0_25px_rgba(244,143,177,0.25)] pointer-events-none opacity-0 z-30 transition-all duration-300">
     <div class="text-pink-400/80 text-[10px] uppercase tracking-widest font-semibold mb-1 flex items-center justify-center gap-1">
       <i class="fa-solid fa-heart text-rose-500 text-[8px] animate-pulse"></i> Para ti, Amanda <i class="fa-solid fa-heart text-rose-500 text-[8px] animate-pulse"></i>
     </div>
-    <p id="toastSpanish" class="font-romantic text-lg md:text-xl text-pink-100 font-bold leading-tight drop-shadow-sm"></p>
+    <p id="toastSpanish" class="font-romantic text-base md:text-lg text-pink-100 font-bold leading-tight drop-shadow-sm"></p>
   </div>
 </div>
 
@@ -65,7 +65,7 @@
     { es: "Eres muy linda", ru: "Ты очень милая" },
     { es: "Tienes una sonrisa hermosa", ru: "У тебя красивая улыбка" },
     { es: "Tus ojos son increíbles", ru: "У тебя невероятные глаза" },
-    { es: "Me encanta tu voz", ru: "Мне нравится твой голос" },
+    { es: "Me encanta tu voice", ru: "Мне нравится твой голос" },
     { es: "Tienes una energía muy bonita", ru: "У тебя очень приятная энергия" },
     { es: "Eres adorable", ru: "Ты очаровательная" },
     { es: "Eres un sueño", ru: "Ты как мечта" },
@@ -118,7 +118,8 @@
   class SoundSystem {
     constructor() {
       this.ctx = null;
-      this.enabled = true;
+      this.enabled = false;
+      this.unlocked = false;
     }
 
     init() {
@@ -129,8 +130,23 @@
         if (this.ctx && this.ctx.state === 'suspended') {
           this.ctx.resume();
         }
+        this.unlockMobileAudio();
       } catch (e) {
         console.error(e);
+      }
+    }
+
+    unlockMobileAudio() {
+      if (this.unlocked || !this.ctx) return;
+
+      const buffer = this.ctx.createBuffer(1, 1, 22050);
+      const source = this.ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(this.ctx.destination);
+      source.start(0);
+
+      if (this.ctx.state === 'running') {
+        this.unlocked = true;
       }
     }
 
@@ -495,8 +511,12 @@
         this.touch.screenY = clientY;
       };
 
-      window.addEventListener('touchstart', (e) => {
+      const handleUserInteraction = (e) => {
         this.soundSystem.init();
+      };
+
+      window.addEventListener('touchstart', (e) => {
+        handleUserInteraction(e);
         this.touch.isDown = true;
         if (e.touches.length > 0) {
           updatePos(e.touches[0].clientX, e.touches[0].clientY);
@@ -514,7 +534,7 @@
       });
 
       window.addEventListener('mousedown', (e) => {
-        this.soundSystem.init();
+        handleUserInteraction(e);
         this.touch.isDown = true;
         updatePos(e.clientX, e.clientY);
       });
@@ -526,10 +546,15 @@
       window.addEventListener('mouseup', () => {
         this.touch.isDown = false;
       });
+
+      document.addEventListener('click', handleUserInteraction, { once: true });
+      document.addEventListener('touchstart', handleUserInteraction, { once: true });
     }
 
     setupSoundButton() {
       const btn = document.getElementById('soundToggleBtn');
+      btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-sm"></i>';
+
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.soundSystem.enabled = !this.soundSystem.enabled;
