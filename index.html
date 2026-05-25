@@ -107,7 +107,7 @@
     { es: "Tu elegancia es natural", ru: "Твоя элегантность естественна" },
     { es: "Podría escucharte hablar por horas", ru: "Я мог бы слушать, как ты говоришь, часами" },
     { es: "Eres la combinación perfecta de dulzura y fuerza", ru: "Ты идеальное сочетание нежности и силы" },
-    { es: "Tienes un brillo único en el rostro", ru: "В твоем лице есть уникальное сияние" },
+    { es: "Tienes un brillo único en el rostro", ru: "В твоем лице есть уникаление сияние" },
     { es: "Me inspiras a ser mejor", ru: "Ты вдохновляешь меня быть лучше" }
   ];
 
@@ -117,25 +117,32 @@
       this.y = worldY;
       this.color = color;
       this.type = type;
-      this.size = Math.random() * 3 + 1.5;
-      if (type === 'heart') this.size = Math.random() * 5 + 3.5;
+      this.initialSize = Math.random() * 2.5 + 1.5;
+      this.size = this.initialSize;
+
+      if (type === 'heart') {
+        this.initialSize = Math.random() * 4 + 3;
+        this.size = this.initialSize;
+      }
 
       const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 0.8 + 0.3;
+      const speed = Math.random() * 0.4 + 0.1;
       this.vx = Math.cos(angle) * speed;
-      this.vy = Math.sin(angle) * speed - 0.2;
+      this.vy = Math.sin(angle) * speed;
 
       this.alpha = 1;
-      this.decay = Math.random() * 0.012 + 0.008;
+      this.decay = Math.random() * 0.008 + 0.005;
     }
 
     update() {
       this.x += this.vx;
       this.y += this.vy;
       this.alpha -= this.decay;
+      this.size = this.initialSize * this.alpha;
     }
 
     draw(ctx, camera) {
+      if (this.alpha <= 0) return;
       ctx.save();
       ctx.globalAlpha = this.alpha;
       ctx.fillStyle = this.color;
@@ -150,8 +157,6 @@
         ctx.bezierCurveTo(screenX + this.size, screenY + this.size/3, screenX + this.size/2, screenY - this.size/2, screenX, screenY);
         ctx.fill();
       } else {
-        ctx.shadowBlur = 6;
-        ctx.shadowColor = this.color;
         ctx.beginPath();
         ctx.arc(screenX, screenY, this.size, 0, Math.PI * 2);
         ctx.fill();
@@ -502,11 +507,11 @@
 
         const isMoving = Math.hypot(this.butterfly.vx, this.butterfly.vy) > 0.4;
         if (isMoving) {
-          if (Math.random() < 0.40) {
-            this.particles.push(new Particle(this.butterfly.x, this.butterfly.y, 'rgba(255,182,193,0.7)', 'sparkle'));
+          if (Math.random() < 0.60) {
+            this.particles.push(new Particle(this.butterfly.x, this.butterfly.y, 'rgba(255,182,193,0.6)', 'sparkle'));
           }
-          if (Math.random() < 0.15) {
-            this.particles.push(new Particle(this.butterfly.x, this.butterfly.y, 'rgba(244,143,177,0.85)', 'heart'));
+          if (Math.random() < 0.25) {
+            this.particles.push(new Particle(this.butterfly.x, this.butterfly.y, 'rgba(244,143,177,0.8)', 'heart'));
           }
         }
 
