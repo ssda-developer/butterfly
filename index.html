@@ -44,11 +44,7 @@
 <canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-10 block"></canvas>
 
 <div class="absolute inset-0 z-20 pointer-events-none flex flex-col justify-between p-6">
-  <div class="w-full flex justify-end items-center pointer-events-auto">
-    <button id="soundToggleBtn" class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-pink-500/20 text-pink-200 active:scale-90 transition-all shadow-[0_0_10px_rgba(244,143,177,0.1)]">
-      <i class="fa-solid fa-volume-high text-sm"></i>
-    </button>
-  </div>
+  <div class="w-full flex justify-end items-center pointer-events-auto"></div>
 
   <div id="loveToast" class="absolute top-12 left-1/2 -translate-x-1/2 w-max max-w-[90vw] bg-gradient-to-r from-pink-950/85 to-purple-950/85 backdrop-blur-lg border border-pink-500/30 rounded-2xl py-3 px-6 text-center shadow-[0_0_25px_rgba(244,143,177,0.25)] pointer-events-none opacity-0 z-30 transition-all duration-300">
     <div class="text-pink-400/80 text-[10px] uppercase tracking-widest font-semibold mb-1 flex items-center justify-center gap-1">
@@ -65,7 +61,7 @@
     { es: "Eres muy linda", ru: "Ты очень милая" },
     { es: "Tienes una sonrisa hermosa", ru: "У тебя красивая улыбка" },
     { es: "Tus ojos son increíbles", ru: "У тебя невероятные глаза" },
-    { es: "Me encanta tu voice", ru: "Мне нравится твой голос" },
+    { es: "Me encanta tu voz", ru: "Мне нравится твой голос" },
     { es: "Tienes una energía muy bonita", ru: "У тебя очень приятная энергия" },
     { es: "Eres adorable", ru: "Ты очаровательная" },
     { es: "Eres un sueño", ru: "Ты как мечта" },
@@ -114,116 +110,6 @@
     { es: "Tienes un brillo único en el rostro", ru: "В твоем лице есть уникальное сияние" },
     { es: "Me inspiras a ser mejor", ru: "Ты вдохновляешь меня быть лучше" }
   ];
-
-  class SoundSystem {
-    constructor() {
-      this.ctx = null;
-      this.enabled = false;
-      this.unlocked = false;
-    }
-
-    init() {
-      try {
-        if (!this.ctx) {
-          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (this.ctx && this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-        this.unlockMobileAudio();
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    unlockMobileAudio() {
-      if (this.unlocked || !this.ctx) return;
-
-      const buffer = this.ctx.createBuffer(1, 1, 22050);
-      const source = this.ctx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(this.ctx.destination);
-      source.start(0);
-
-      if (this.ctx.state === 'running') {
-        this.unlocked = true;
-      }
-    }
-
-    playChime(type) {
-      if (!this.enabled) return;
-      try {
-        this.init();
-        if (!this.ctx) return;
-        if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-
-        const now = this.ctx.currentTime;
-
-        if (type === 'heart') {
-          const baseFreq = 349.23;
-          const thirdFreq = 440.00;
-
-          const osc1 = this.ctx.createOscillator();
-          const gain1 = this.ctx.createGain();
-          osc1.type = 'sine';
-          osc1.frequency.setValueAtTime(baseFreq, now);
-          osc1.frequency.exponentialRampToValueAtTime(baseFreq * 1.05, now + 0.2);
-          gain1.gain.setValueAtTime(0.12, now);
-          gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
-
-          osc1.connect(gain1);
-          gain1.connect(this.ctx.destination);
-          osc1.start(now);
-          osc1.stop(now + 0.8);
-
-          const osc2 = this.ctx.createOscillator();
-          const gain2 = this.ctx.createGain();
-          osc2.type = 'triangle';
-          osc2.frequency.setValueAtTime(thirdFreq, now + 0.04);
-          osc2.frequency.exponentialRampToValueAtTime(thirdFreq * 1.02, now + 0.25);
-          gain2.gain.setValueAtTime(0.06, now + 0.04);
-          gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
-
-          osc2.connect(gain2);
-          gain2.connect(this.ctx.destination);
-          osc2.start(now + 0.04);
-          osc2.stop(now + 0.8);
-        } else {
-          const note1 = 880.00;
-          const note2 = 1174.66;
-
-          const osc1 = this.ctx.createOscillator();
-          const gain1 = this.ctx.createGain();
-          osc1.type = 'sine';
-          osc1.frequency.setValueAtTime(note1, now);
-          osc1.frequency.exponentialRampToValueAtTime(note2, now + 0.12);
-          gain1.gain.setValueAtTime(0.07, now);
-          gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
-
-          osc1.connect(gain1);
-          gain1.connect(this.ctx.destination);
-          osc1.start(now);
-          osc1.stop(now + 0.4);
-
-          const osc2 = this.ctx.createOscillator();
-          const gain2 = this.ctx.createGain();
-          osc2.type = 'sine';
-          osc2.frequency.setValueAtTime(note2 * 1.2, now + 0.08);
-          gain2.gain.setValueAtTime(0.03, now + 0.08);
-          gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-
-          osc2.connect(gain2);
-          gain2.connect(this.ctx.destination);
-          osc2.start(now + 0.08);
-          osc2.stop(now + 0.5);
-        }
-      } catch(e) {
-        console.error(e);
-      }
-    }
-  }
 
   class Particle {
     constructor(worldX, worldY, color, type = 'sparkle') {
@@ -471,7 +357,6 @@
     constructor() {
       this.canvas = document.getElementById('gameCanvas');
       this.ctx = this.canvas.getContext('2d');
-      this.soundSystem = new SoundSystem();
       this.butterfly = new Butterfly();
 
       this.camera = { x: 0, y: 0, targetX: 0, targetY: 0, lerpSpeed: 0.08 };
@@ -497,7 +382,6 @@
 
       this.setupControls();
       this.generateWorld();
-      this.setupSoundButton();
     }
 
     resizeCanvas() {
@@ -511,12 +395,7 @@
         this.touch.screenY = clientY;
       };
 
-      const handleUserInteraction = (e) => {
-        this.soundSystem.init();
-      };
-
       window.addEventListener('touchstart', (e) => {
-        handleUserInteraction(e);
         this.touch.isDown = true;
         if (e.touches.length > 0) {
           updatePos(e.touches[0].clientX, e.touches[0].clientY);
@@ -534,7 +413,6 @@
       });
 
       window.addEventListener('mousedown', (e) => {
-        handleUserInteraction(e);
         this.touch.isDown = true;
         updatePos(e.clientX, e.clientY);
       });
@@ -545,25 +423,6 @@
 
       window.addEventListener('mouseup', () => {
         this.touch.isDown = false;
-      });
-
-      document.addEventListener('click', handleUserInteraction, { once: true });
-      document.addEventListener('touchstart', handleUserInteraction, { once: true });
-    }
-
-    setupSoundButton() {
-      const btn = document.getElementById('soundToggleBtn');
-      btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-sm"></i>';
-
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.soundSystem.enabled = !this.soundSystem.enabled;
-        if (this.soundSystem.enabled) {
-          btn.innerHTML = '<i class="fa-solid fa-volume-high text-sm"></i>';
-          this.soundSystem.init();
-        } else {
-          btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-sm"></i>';
-        }
       });
     }
 
@@ -667,8 +526,6 @@
 
           const distance = Math.hypot(this.butterfly.x - item.x, this.butterfly.y - item.y);
           if (distance < this.butterfly.size + item.size) {
-            this.soundSystem.playChime(item.type);
-
             const burstColor = item.type === 'flower' ? `hsla(${item.hue}, 95%, 75%, 1)` : '#ff547d';
             for (let p = 0; p < 15; p++) {
               this.particles.push(new Particle(item.x, item.y, burstColor, item.type === 'heart' ? 'heart' : 'sparkle'));
