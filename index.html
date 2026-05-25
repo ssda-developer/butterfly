@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Para ti, Amanda</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      overflow: hidden;
+      background-color: #0d0614;
+    }
+    .font-romantic {
+      font-family: 'Playfair Display', serif;
+    }
+    .font-handwritten {
+      font-family: 'Caveat', cursive;
+    }
+    @keyframes slide-down-fade {
+      0% { transform: translate(-50%, -20px); opacity: 0; filter: blur(5px); }
+      15% { transform: translate(-50%, 0); opacity: 1; filter: blur(0px); }
+      85% { transform: translate(-50%, 0); opacity: 1; filter: blur(0px); }
+      100% { transform: translate(-50%, -20px); opacity: 0; filter: blur(5px); }
+    }
+    .toast-active {
+      animation: slide-down-fade 3.5s forwards cubic-bezier(0.25, 1, 0.5, 1);
+    }
+  </style>
+</head>
+<body class="w-full h-screen relative flex items-center justify-center">
+
+<div class="absolute inset-0 bg-gradient-to-b from-[#0a0414] via-[#1a0b2e] to-[#05020a] z-0 pointer-events-none"></div>
+<div class="absolute w-[300px] h-[300px] rounded-full bg-pink-500/10 blur-[100px] top-1/4 left-1/4 pointer-events-none"></div>
+<div class="absolute w-[350px] h-[350px] rounded-full bg-indigo-500/10 blur-[120px] bottom-1/3 right-1/4 pointer-events-none"></div>
+
+<canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-10 block"></canvas>
+
+<div class="absolute inset-0 z-20 pointer-events-none flex flex-col justify-between p-6">
+  <div class="w-full flex justify-end items-center pointer-events-auto">
+    <button id="soundToggleBtn" class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-pink-500/20 text-pink-200 active:scale-90 transition-all shadow-[0_0_10px_rgba(244,143,177,0.1)]">
+      <i class="fa-solid fa-volume-high text-sm"></i>
+    </button>
+  </div>
+
+  <div id="loveToast" class="absolute top-20 left-1/2 -translate-x-1/2 max-w-md bg-gradient-to-r from-pink-950/80 to-purple-950/80 backdrop-blur-lg border border-pink-500/30 rounded-2xl p-4 text-center shadow-[0_0_25px_rgba(244,143,177,0.25)] pointer-events-none opacity-0 z-30 transition-all duration-300">
+    <div class="text-pink-400/80 text-[10px] uppercase tracking-widest font-semibold mb-1 flex items-center justify-center gap-1">
+      <i class="fa-solid fa-heart text-rose-500 text-[8px] animate-pulse"></i> Para ti, Amanda <i class="fa-solid fa-heart text-rose-500 text-[8px] animate-pulse"></i>
+    </div>
+    <p id="toastSpanish" class="font-romantic text-lg md:text-xl text-pink-100 font-bold leading-tight drop-shadow-sm"></p>
+  </div>
+</div>
+
+<script>
+  const COMPLIMENTS = [
+    { es: "Eres hermosa", ru: "Ты красивая" },
+    { es: "Eres preciosa", ru: "Ты прекрасна" },
+    { es: "Eres muy linda", ru: "Ты очень милая" },
+    { es: "Tienes una sonrisa hermosa", ru: "У тебя красивая улыбка" },
+    { es: "Tus ojos son increíbles", ru: "У тебя невероятные глаза" },
+    { es: "Me encanta tu voz", ru: "Мне нравится твой голос" },
+    { es: "Tienes una energía muy bonita", ru: "У тебя очень приятная энергия" },
+    { es: "Eres adorable", ru: "Ты очаровательная" },
+    { es: "Eres un sueño", ru: "Ты как мечта" },
+    { es: "No puedo dejar de pensar en ti", ru: "Я не могу перестать думать о тебе" },
+    { es: "Tienes una mirada preciosa", ru: "У тебя прекрасный взгляд" },
+    { es: "Eres demasiado bonita", ru: "Ты слишком красивая" },
+    { es: "Tu risa es perfecta", ru: "Твой смех идеален" },
+    { es: "Iluminas todo cuando apareces", ru: "Ты всё озаряешь, когда появляешься" },
+    { es: "Me haces sonreír", ru: "Ты заставляешь меня улыбаться" },
+    { es: "Eres única", ru: "Ты уникальная" },
+    { es: "Tienes un estilo increíble", ru: "У тебя невероятный стиль" },
+    { es: "Tu cabello es hermoso", ru: "У тебя красивые волосы" },
+    { es: "Eres encantadora", ru: "Ты очаровательная" },
+    { es: "Cada foto tuya es perfecta", ru: "Каждое твоё фото идеально" },
+    { es: "Tienes algo especial", ru: "В тебе есть что-то особенное" },
+    { es: "Me gusta mucho hablar contigo", ru: "Мне очень нравится разговаривать с тобой" },
+    { es: "Tu sonrisa me mata", ru: "Твоя улыбка меня убивает" },
+    { es: "Eres demasiado tierna", ru: "Ты слишком милая и нежная" },
+    { es: "Tu personalidad es hermosa", ru: "У тебя прекрасный характер" },
+    { es: "Contigo todo se siente mejor", ru: "С тобой всё ощущается лучше" },
+    { es: "Eres la chica más linda que he visto", ru: "Ты самая милая девушка, которую я видел" },
+    { es: "Me encanta tu forma de pensar", ru: "Мне нравится твой образ мышления" },
+    { es: "Tu voz podría calmar cualquier tormenta", ru: "Твой голос мог бы успокоить любую бурю" },
+    { es: "Pareces un ángel", ru: "Ты как ангел" },
+    { es: "Tienes una vibra increíble", ru: "У тебя невероятный вайб" },
+    { es: "Eres muy dulce", ru: "Ты очень милая и добрая" },
+    { es: "Tu voz me tranquiliza", ru: "Твой голос меня успокаивает" },
+    { es: "Me encanta pasar tiempo contigo", ru: "Мне нравится проводить с тобой время" },
+    { es: "Tus ojos brillan hermoso", ru: "Твои глаза прекрасно сияют" },
+    { es: "Tienes un corazón hermoso", ru: "У тебя прекрасное сердце" },
+    { es: "Tu sonrisa alegra mi día", ru: "Твоя улыбка делает мой день лучше" },
+    { es: "Tienes unos ojos preciosos", ru: "У тебя прекрасные глаза" },
+    { es: "Eres imposible de olvidar", ru: "Тебя невозможно забыть" },
+    { es: "Siempre te ves bien", ru: "Ты всегда хорошо выглядишь" },
+    { es: "Eres tan cute", ru: "Ты такая милая" },
+    { es: "Tu presencia me calma", ru: "Твоё присутствие меня успокаивает" },
+    { es: "Me haces sentir especial", ru: "Ты заставляешь меня чувствовать себя особенным" },
+    { es: "Eres arte", ru: "Ты искусство" },
+    { es: "Tu sonrisa debería ser ilegal", ru: "Твоя улыбка должна быть незаконной" },
+    { es: "Hablar contigo es mi parte favorita del día", ru: "Разговаривать с тобой — моя любимая часть дня" },
+    { es: "Eres simplemente fascinante", ru: "Ты просто завораживающая" },
+    { es: "Me cautivas por completo", ru: "Ты меня полностью покоряешь" },
+    { es: "Tu elegancia es natural", ru: "Твоя элегантность естественна" },
+    { es: "Podría escucharte hablar por horas", ru: "Я мог бы слушать, как ты говоришь, часами" },
+    { es: "Eres la combinación perfecta de dulzura y fuerza", ru: "Ты идеальное сочетание нежности и силы" },
+    { es: "Tienes un brillo único en el rostro", ru: "В твоем лице есть уникальное сияние" },
+    { es: "Me inspiras a ser mejor", ru: "Ты вдохновляешь меня быть лучше" }
+  ];
+
+  class SoundSystem {
+    constructor() {
+      this.ctx = null;
+      this.enabled = true;
+    }
+
+    init() {
+      try {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    playChime(type) {
+      if (!this.enabled) return;
+      try {
+        this.init();
+        if (!this.ctx) return;
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+
+        const now = this.ctx.currentTime;
+
+        if (type === 'heart') {
+          const baseFreq = 349.23;
+          const thirdFreq = 440.00;
+
+          const osc1 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(baseFreq, now);
+          osc1.frequency.exponentialRampToValueAtTime(baseFreq * 1.05, now + 0.2);
+          gain1.gain.setValueAtTime(0.12, now);
+          gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+
+          osc1.connect(gain1);
+          gain1.connect(this.ctx.destination);
+          osc1.start(now);
+          osc1.stop(now + 0.8);
+
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'triangle';
+          osc2.frequency.setValueAtTime(thirdFreq, now + 0.04);
+          osc2.frequency.exponentialRampToValueAtTime(thirdFreq * 1.02, now + 0.25);
+          gain2.gain.setValueAtTime(0.06, now + 0.04);
+          gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+
+          osc2.connect(gain2);
+          gain2.connect(this.ctx.destination);
+          osc2.start(now + 0.04);
+          osc2.stop(now + 0.8);
+        } else {
+          const note1 = 880.00;
+          const note2 = 1174.66;
+
+          const osc1 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(note1, now);
+          osc1.frequency.exponentialRampToValueAtTime(note2, now + 0.12);
+          gain1.gain.setValueAtTime(0.07, now);
+          gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+
+          osc1.connect(gain1);
+          gain1.connect(this.ctx.destination);
+          osc1.start(now);
+          osc1.stop(now + 0.4);
+
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(note2 * 1.2, now + 0.08);
+          gain2.gain.setValueAtTime(0.03, now + 0.08);
+          gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+
+          osc2.connect(gain2);
+          gain2.connect(this.ctx.destination);
+          osc2.start(now + 0.08);
+          osc2.stop(now + 0.5);
+        }
+      } catch(e) {
+        console.error(e);
+      }
+    }
+  }
+
+  class Particle {
+    constructor(worldX, worldY, color, type = 'sparkle') {
+      this.x = worldX;
+      this.y = worldY;
+      this.color = color;
+      this.type = type;
+      this.size = Math.random() * 3 + 1.5;
+      if (type === 'heart') this.size = Math.random() * 5 + 3.5;
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 0.8 + 0.3;
+      this.vx = Math.cos(angle) * speed;
+      this.vy = Math.sin(angle) * speed - 0.2;
+
+      this.alpha = 1;
+      this.decay = Math.random() * 0.012 + 0.008;
+    }
+
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.alpha -= this.decay;
+    }
+
+    draw(ctx, camera) {
+      ctx.save();
+      ctx.globalAlpha = this.alpha;
+      ctx.fillStyle = this.color;
+
+      const screenX = this.x - camera.x;
+      const screenY = this.y - camera.y;
+
+      if (this.type === 'heart') {
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY);
+        ctx.bezierCurveTo(screenX - this.size/2, screenY - this.size/2, screenX - this.size, screenY + this.size/3, screenX, screenY + this.size);
+        ctx.bezierCurveTo(screenX + this.size, screenY + this.size/3, screenX + this.size/2, screenY - this.size/2, screenX, screenY);
+        ctx.fill();
+      } else {
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  class Collectible {
+    constructor(worldX, worldY) {
+      this.x = worldX;
+      this.y = worldY;
+      this.size = Math.random() * 6 + 10;
+      this.type = Math.random() > 0.5 ? 'flower' : 'heart';
+      this.hue = this.type === 'flower' ? Math.random() * 60 + 290 : 350;
+      this.angle = Math.random() * Math.PI * 2;
+      this.pulseSpeed = Math.random() * 0.03 + 0.015;
+      this.wiggle = Math.random() * Math.PI * 2;
+      this.wiggleSpeed = Math.random() * 0.02 + 0.01;
+    }
+
+    update() {
+      this.angle += this.pulseSpeed;
+      this.wiggle += this.wiggleSpeed;
+    }
+
+    draw(ctx, camera) {
+      ctx.save();
+      const screenX = this.x - camera.x;
+      const screenY = this.y - camera.y;
+
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = `hsla(${this.hue}, 100%, 75%, 0.45)`;
+
+      const pulseScale = 1 + Math.sin(this.angle) * 0.12;
+      const currentSize = this.size * pulseScale;
+
+      ctx.translate(screenX, screenY);
+      ctx.rotate(Math.sin(this.wiggle) * 0.15);
+
+      if (this.type === 'flower') {
+        ctx.rotate(this.angle * 0.05);
+        ctx.fillStyle = `hsla(${this.hue}, 90%, 75%, 0.95)`;
+        for (let i = 0; i < 5; i++) {
+          ctx.beginPath();
+          ctx.ellipse(0, -currentSize/2, currentSize/3.2, currentSize/1.4, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.rotate((Math.PI * 2) / 5);
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, currentSize/3.8, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff4bc';
+        ctx.fill();
+      } else {
+        ctx.fillStyle = `hsla(${this.hue}, 95%, 70%, 0.95)`;
+        ctx.beginPath();
+        ctx.moveTo(0, -currentSize/4);
+        ctx.bezierCurveTo(-currentSize/2, -currentSize, -currentSize, -currentSize/3, 0, currentSize/1.3);
+        ctx.bezierCurveTo(currentSize, -currentSize/3, currentSize/2, -currentSize, 0, -currentSize/4);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  class Butterfly {
+    constructor() {
+      this.x = 0;
+      this.y = 0;
+      this.vx = 0;
+      this.vy = 0;
+      this.size = 23;
+      this.wingFlap = 0;
+      this.color1 = '#ffb7d5';
+      this.color2 = '#c5b7ff';
+      this.angle = 0;
+    }
+
+    update(touch, canvas) {
+      if (touch.isDown) {
+        const dx = touch.screenX - (canvas.width / 2);
+        const dy = touch.screenY - (canvas.height / 2);
+        const dist = Math.hypot(dx, dy);
+
+        if (dist > 15) {
+          const targetAngle = Math.atan2(dy, dx);
+          const maxSpeed = 5.2;
+          const targetSpeed = Math.min(dist * 0.04, maxSpeed);
+
+          this.vx += (Math.cos(targetAngle) * targetSpeed - this.vx) * 0.10;
+          this.vy += (Math.sin(targetAngle) * targetSpeed - this.vy) * 0.10;
+        }
+      } else {
+        this.vx *= 0.95;
+        this.vy *= 0.95;
+      }
+
+      this.x += this.vx;
+      this.y += this.vy;
+
+      const currentVelocity = Math.hypot(this.vx, this.vy);
+
+      if (currentVelocity > 0.3) {
+        const targetAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
+        let angleDiff = targetAngle - this.angle;
+        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+
+        this.angle += angleDiff * 0.14;
+      }
+
+      const flapSpeed = 0.08 + Math.min(currentVelocity * 0.02, 0.14);
+      this.wingFlap += flapSpeed;
+    }
+
+    draw(ctx, camera) {
+      ctx.save();
+      const screenX = this.x - camera.x;
+      const screenY = this.y - camera.y;
+
+      ctx.translate(screenX, screenY);
+      ctx.rotate(this.angle);
+
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = 'rgba(244, 143, 177, 0.75)';
+
+      const flapWidth = Math.abs(Math.sin(this.wingFlap));
+
+      const gradL = ctx.createRadialGradient(-this.size/2, -this.size/2, 2, -this.size, -this.size, this.size*1.6);
+      gradL.addColorStop(0, this.color1);
+      gradL.addColorStop(1, this.color2);
+
+      const gradR = ctx.createRadialGradient(this.size/2, -this.size/2, 2, this.size, -this.size, this.size*1.6);
+      gradR.addColorStop(0, this.color1);
+      gradR.addColorStop(1, this.color2);
+
+      ctx.fillStyle = gradL;
+      ctx.beginPath();
+      ctx.bezierCurveTo(-3, -2, -this.size * 2 * flapWidth, -this.size * 1.5, -this.size * 1.8 * flapWidth, -this.size * 0.2);
+      ctx.bezierCurveTo(-this.size * 1.5 * flapWidth, 0.2, -5, -1, 0, 0);
+      ctx.bezierCurveTo(-2, 2, -this.size * 1.5 * flapWidth, this.size * 1.4, -this.size * 1.1 * flapWidth, this.size * 0.5);
+      ctx.bezierCurveTo(-this.size * 0.8 * flapWidth, 0.2, -2, 0, 0, 0);
+      ctx.fill();
+
+      ctx.fillStyle = gradR;
+      ctx.beginPath();
+      ctx.bezierCurveTo(3, -2, this.size * 2 * flapWidth, -this.size * 1.5, this.size * 1.8 * flapWidth, -this.size * 0.2);
+      ctx.bezierCurveTo(this.size * 1.5 * flapWidth, 0.2, 5, -1, 0, 0);
+      ctx.bezierCurveTo(2, 2, this.size * 1.5 * flapWidth, this.size * 1.4, this.size * 1.1 * flapWidth, this.size * 0.5);
+      ctx.bezierCurveTo(this.size * 0.8 * flapWidth, 0.2, 2, 0, 0, 0);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffeff6';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 2.5, this.size * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-1, -this.size * 0.6);
+      ctx.quadraticCurveTo(-4, -this.size * 1.1, -7, -this.size * 1.0);
+      ctx.moveTo(1, -this.size * 0.6);
+      ctx.quadraticCurveTo(4, -this.size * 1.1, 7, -this.size * 1.0);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+  }
+
+  class Firefly {
+    constructor(worldX, worldY) {
+      this.x = worldX;
+      this.y = worldY;
+      this.size = Math.random() * 2 + 1;
+      this.angle = Math.random() * Math.PI * 2;
+      this.speed = Math.random() * 0.3 + 0.1;
+    }
+
+    update() {
+      this.angle += Math.random() * 0.04 - 0.02;
+      this.x += Math.cos(this.angle) * this.speed;
+      this.y += Math.sin(this.angle) * this.speed - 0.08;
+    }
+
+    draw(ctx, camera) {
+      ctx.save();
+      const screenX = this.x - camera.x;
+      const screenY = this.y - camera.y;
+
+      ctx.globalAlpha = 0.3 + Math.abs(Math.sin(this.angle)) * 0.5;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#ffe399';
+      ctx.fillStyle = '#ffe399';
+      ctx.beginPath();
+      ctx.arc(screenX, screenY, this.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  class GameEngine {
+    constructor() {
+      this.canvas = document.getElementById('gameCanvas');
+      this.ctx = this.canvas.getContext('2d');
+      this.soundSystem = new SoundSystem();
+      this.butterfly = new Butterfly();
+
+      this.camera = { x: 0, y: 0, targetX: 0, targetY: 0, lerpSpeed: 0.08 };
+      this.touch = { screenX: 0, screenY: 0, isDown: false };
+
+      this.particles = [];
+      this.collectibles = [];
+      this.fireflies = [];
+      this.complimentPool = [...COMPLIMENTS];
+
+      this.loveToast = document.getElementById('loveToast');
+      this.toastSpanish = document.getElementById('toastSpanish');
+
+      this.init();
+    }
+
+    init() {
+      this.resizeCanvas();
+      window.addEventListener('resize', () => this.resizeCanvas());
+
+      this.camera.x = this.butterfly.x - this.canvas.width / 2;
+      this.camera.y = this.butterfly.y - this.canvas.height / 2;
+
+      this.setupControls();
+      this.generateWorld();
+      this.setupSoundButton();
+    }
+
+    resizeCanvas() {
+      this.canvas.width = window.innerWidth;
+      this.canvas.height = window.innerHeight;
+    }
+
+    setupControls() {
+      const updatePos = (clientX, clientY) => {
+        this.touch.screenX = clientX;
+        this.touch.screenY = clientY;
+      };
+
+      window.addEventListener('touchstart', (e) => {
+        this.soundSystem.init();
+        this.touch.isDown = true;
+        if (e.touches.length > 0) {
+          updatePos(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: false });
+
+      window.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+          updatePos(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: false });
+
+      window.addEventListener('touchend', () => {
+        this.touch.isDown = false;
+      });
+
+      window.addEventListener('mousedown', (e) => {
+        this.soundSystem.init();
+        this.touch.isDown = true;
+        updatePos(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        updatePos(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mouseup', () => {
+        this.touch.isDown = false;
+      });
+    }
+
+    setupSoundButton() {
+      const btn = document.getElementById('soundToggleBtn');
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.soundSystem.enabled = !this.soundSystem.enabled;
+        if (this.soundSystem.enabled) {
+          btn.innerHTML = '<i class="fa-solid fa-volume-high text-sm"></i>';
+          this.soundSystem.init();
+        } else {
+          btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-sm"></i>';
+        }
+      });
+    }
+
+    generateWorld() {
+      for (let i = 0; i < 30; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 800;
+        this.fireflies.push(new Firefly(Math.cos(angle) * dist, Math.sin(angle) * dist));
+      }
+
+      for (let i = 0; i < 12; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 700 + 200;
+        this.collectibles.push(new Collectible(Math.cos(angle) * dist, Math.sin(angle) * dist));
+      }
+    }
+
+    checkAndRegenerateEntities() {
+      this.collectibles.forEach(item => {
+        const dist = Math.hypot(item.x - this.butterfly.x, item.y - this.butterfly.y);
+        if (dist > 1100) {
+          let spawnAngle = Math.random() * Math.PI * 2;
+          const speed = Math.hypot(this.butterfly.vx, this.butterfly.vy);
+
+          if (speed > 0.5) {
+            const heading = Math.atan2(this.butterfly.vy, this.butterfly.vx);
+            spawnAngle = heading + (Math.random() * 1.5 - 0.75);
+          }
+
+          const spawnDist = Math.random() * 250 + 600;
+          item.x = this.butterfly.x + Math.cos(spawnAngle) * spawnDist;
+          item.y = this.butterfly.y + Math.sin(spawnAngle) * spawnDist;
+        }
+      });
+
+      this.fireflies.forEach(f => {
+        const dist = Math.hypot(f.x - this.butterfly.x, f.y - this.butterfly.y);
+        if (dist > 1200) {
+          const angle = Math.random() * Math.PI * 2;
+          const spawnDist = Math.random() * 300 + 800;
+          f.x = this.butterfly.x + Math.cos(angle) * spawnDist;
+          f.y = this.butterfly.y + Math.sin(angle) * spawnDist;
+        }
+      });
+    }
+
+    showCompliment() {
+      if (this.complimentPool.length === 0) {
+        this.complimentPool = [...COMPLIMENTS];
+      }
+      const randIdx = Math.floor(Math.random() * this.complimentPool.length);
+      const compliment = this.complimentPool.splice(randIdx, 1)[0];
+
+      this.loveToast.classList.remove('toast-active');
+      void this.loveToast.offsetWidth;
+
+      this.toastSpanish.textContent = compliment.es;
+
+      this.loveToast.classList.add('toast-active');
+    }
+
+    run() {
+      const animateLoop = () => {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.butterfly.update(this.touch, this.canvas);
+
+        const targetCamX = this.butterfly.x - this.canvas.width / 2;
+        const targetCamY = this.butterfly.y - this.canvas.height / 2;
+        this.camera.x += (targetCamX - this.camera.x) * this.camera.lerpSpeed;
+        this.camera.y += (targetCamY - this.camera.y) * this.camera.lerpSpeed;
+
+        this.fireflies.forEach(f => {
+          f.update();
+          f.draw(this.ctx, this.camera);
+        });
+
+        const isMoving = Math.hypot(this.butterfly.vx, this.butterfly.vy) > 0.4;
+        if (isMoving) {
+          if (Math.random() < 0.40) {
+            this.particles.push(new Particle(this.butterfly.x, this.butterfly.y, 'rgba(255,182,193,0.7)', 'sparkle'));
+          }
+          if (Math.random() < 0.15) {
+            this.particles.push(new Particle(this.butterfly.x, this.butterfly.y, 'rgba(244,143,177,0.85)', 'heart'));
+          }
+        }
+
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          this.particles[i].update();
+          this.particles[i].draw(this.ctx, this.camera);
+          if (this.particles[i].alpha <= 0) {
+            this.particles.splice(i, 1);
+          }
+        }
+
+        this.butterfly.draw(this.ctx, this.camera);
+
+        this.collectibles.forEach(item => {
+          item.update();
+          item.draw(this.ctx, this.camera);
+
+          const distance = Math.hypot(this.butterfly.x - item.x, this.butterfly.y - item.y);
+          if (distance < this.butterfly.size + item.size) {
+            this.soundSystem.playChime(item.type);
+
+            const burstColor = item.type === 'flower' ? `hsla(${item.hue}, 95%, 75%, 1)` : '#ff547d';
+            for (let p = 0; p < 15; p++) {
+              this.particles.push(new Particle(item.x, item.y, burstColor, item.type === 'heart' ? 'heart' : 'sparkle'));
+            }
+
+            this.showCompliment();
+
+            const angle = Math.random() * Math.PI * 2;
+            const spawnDist = Math.random() * 300 + 600;
+            item.x = this.butterfly.x + Math.cos(angle) * spawnDist;
+            item.y = this.butterfly.y + Math.sin(angle) * spawnDist;
+            item.hue = item.type === 'flower' ? Math.random() * 60 + 290 : 350;
+          }
+        });
+
+        this.checkAndRegenerateEntities();
+        requestAnimationFrame(animateLoop);
+      };
+
+      animateLoop();
+    }
+  }
+
+  window.onload = () => {
+    const engine = new GameEngine();
+    engine.run();
+  };
+</script>
+</body>
+</html>
